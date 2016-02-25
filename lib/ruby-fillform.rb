@@ -1,11 +1,12 @@
 # -*- encoding : utf-8 -*-
-require 'prawn-fillform/version'
+require 'prawn'
+require 'ruby-fillform/version'
 require 'open-uri'
 
 OpenURI::Buffer.send :remove_const, 'StringMax' if OpenURI::Buffer.const_defined?('StringMax')
 OpenURI::Buffer.const_set 'StringMax', 0
 
-module Prawn
+module Ruby
 
   module Fillform
 
@@ -78,8 +79,11 @@ module Prawn
       end
 
       def font_size
-        return 12.0 unless deref(@dictionary[:DA])
-        deref(@dictionary[:DA]).split(" ")[1].to_f
+        unless deref(@dictionary[:DA]).nil?
+          deref(@dictionary[:DA]).split(" ")[5].to_f
+        else
+          12.0
+        end
       end
 
       def font_style
@@ -97,8 +101,8 @@ module Prawn
       end
 
       def font_color
-        return "0000" unless deref(@dictionary[:DA])
-        Prawn::Graphics::Color.rgb2hex(deref(@dictionary[:DA]).split(" ")[3..5].collect { |e| e.to_f * 255 }).to_s
+        return "000013ec" unless deref(@dictionary[:DA])
+        Prawn::Graphics::Color.rgb2hex(deref(@dictionary[:DA]).split(" ")[0..2].collect { |e| e.to_f * 255 }).to_s
       end
 
       def type
@@ -118,6 +122,11 @@ module Prawn
 
       def type
         :checkbox
+      end
+
+      def font_color
+        return "000013ec" unless deref(@dictionary[:DA])
+        Prawn::Graphics::Color.rgb2hex(deref(@dictionary[:DA]).split(" ")[0..2].collect { |e| e.to_f * 255 }).to_s
       end
 
       def font_style
@@ -214,16 +223,14 @@ module Prawn
         if annots
           annots.map do |ref|
             dictionary = deref(ref)
-
             next unless deref(dictionary[:Type]) == :Annot and deref(dictionary[:Subtype]) == :Widget
             next unless (deref(dictionary[:FT]) == :Tx || deref(dictionary[:FT]) == :Btn)
-
             type = deref(dictionary[:FT]).to_sym
             case type
             when :Tx
               acroform[page_number] << Text.new(dictionary)
             when :Btn
-              if deref(dictionary[:AP]).has_key? :D
+              if deref(dictionary[:AP]).has_key?(:D) || deref(dictionary[:AP][:N]).has_key?(:Off)
                 acroform[page_number] << Checkbox.new(dictionary)
               else
                 acroform[page_number] << Button.new(dictionary)
@@ -241,41 +248,40 @@ module Prawn
           number = page.to_s.split("_").last.to_i
           go_to_page(number)
 
-          value = data[page][field.name].fetch(:value) rescue nil
+          field_name_page = data[page][field.name]
+          value = field_name_page.fetch(:value) rescue nil
+          options = field_name_page.fetch(:options) rescue nil
           if value.nil?
-            value = data[field.name].fetch(:value) rescue nil
+            value = field_name_page.fetch(:value).to_s rescue nil
+            options = field_name_page.fetch(:options) rescue nil
           end
-          options = data[field.name].fetch(:options) rescue nil
+
           options ||= {}
 
           if value
             value = value.to_s
-            x_offset = options[:x_offset] || self.class.fillform_x_offset
-            y_offset = options[:y_offset] || self.class.fillform_y_offset
-
+            x_offset = options[:x_offset] || 34
+            y_offset = options[:y_offset] || 38
             if field.type == :text
               fill_color options[:font_color] || field.font_color
 
 	      font options[:font_face]
-              text_box value, :at => [field.x + x_offset, field.y + y_offset],
+              text_box value, :at => [field.x - x_offset, field.y - y_offset],
                                     :align => options[:align] || field.align,
                                     :width => options[:width] || field.width,
                                     :height => options[:height] || field.height,
                                     :valign => options[:valign] || :center,
-
-                                    # Default to the document font size if the field size is 0
                                     :size => options[:font_size] || ((size = field.font_size) > 0.0 ? size : font_size),
                                     :style => options[:font_style] || field.font_style
             elsif field.type == :checkbox
               is_yes = (v = value.downcase) == "yes" || v == "1" || v == "true"
-
               formatted_text_box [{
                   text: is_yes ? Checkbox::YES : Checkbox::NO,
                   font: "#{Prawn::BASEDIR}/data/fonts/DejaVuSans.ttf",
-                  size: field.font_size,
-                  styles: [field.font_style]
+                  size: options[:font_size] || field.font_size,
+                  styles: options[:font_style] || [field.font_style]
                 }],
-                :at => [field.x + x_offset, field.y + y_offset],
+                :at => [field.x - x_offset, field.y - y_offset],
                 :width => options[:width] || field.width,
                 :height => options[:height] || field.height
             elsif field.type == :button
@@ -289,7 +295,6 @@ module Prawn
                                   :vposition => options[:vposition] || :center,
                                   :fit => options[:fit] || [field.width, field.height]
                 end
-
               end
             end
           end
@@ -304,6 +309,6 @@ module Prawn
 end
 
 require 'prawn/document'
-Prawn::Document.extend Prawn::Fillform::XYOffsets
-Prawn::Document.send(:include, Prawn::Fillform)
+Prawn::Document.extend Ruby::Fillform::XYOffsets
+Prawn::Document.send(:include, Ruby::Fillform)
 

@@ -1,7 +1,7 @@
 # -*- encoding : utf-8 -*-
-module Prawn
+module Ruby
   module Fillform
-    VERSION = "0.0.20"
+    VERSION = "0.1.0"
   end
 end
 
