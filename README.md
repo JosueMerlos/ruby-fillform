@@ -3,7 +3,7 @@
 ## Install
 
 ```bash
-$ gem install ruby-fill-form
+$ gem install ruby-fillform
 ```
 
 ## Usage
@@ -12,7 +12,7 @@ Currently only text fields, check box and buttons are supported.
 
 
 ```ruby
-require 'ruby-fill-form'
+require 'ruby-fillform'
 
 data = {}
 data[:page_1] = {}
@@ -30,7 +30,7 @@ end
 
 Take a look in `examples` repo
 
-https://github.com/JosueMerlos/ruby-fill-form-examples
+https://github.com/JosueMerlos/ruby-fill-form-example.git
 
 #And on a per-form basis
 
