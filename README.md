@@ -30,7 +30,7 @@ end
 
 Take a look in `examples` repo
 
-https://github.com/JosueMerlos/ruby-fill-form-example.git
+https://github.com/JosueMerlos/ruby-fillform-example.git
 
 #And on a per-form basis
 
